@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>第 15 课：综合场景收官</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #141418; }
+    #glcanvas { display: block; width: 100vw; height: 100vh; }
+    #overlay {
+      position: fixed; top: 12px; left: 12px; padding: 8px 12px;
+      font: 14px/1.4 system-ui, sans-serif; color: #e8e8ec;
+      background: rgba(0, 0, 0, 0.45); border-radius: 6px; pointer-events: none;
+    }
+    #error {
+      position: fixed; inset: 0; margin: 0; padding: 24px; overflow: auto;
+      font: 14px/1.5 ui-monospace, monospace; color: #ffb4b4;
+      background: rgba(20, 0, 0, 0.92); white-space: pre-wrap; z-index: 10;
+    }
+    #error[hidden] { display: none; }
+  </style>
+</head>
+<body>
+  <canvas id="glcanvas" aria-label="WebGL2 画布"></canvas>
+  <div id="overlay">第 15 课 · 综合场景 · 地面 + 球体 + 双光源 · 阶段三收官</div>
+  <pre id="error" hidden></pre>
+
+  <script src="../_shared/webgl2-bootstrap.js"></script>
+  <script src="../_shared/webgl2-math.js"></script>
+  <script>
+    (function () {
+      var boot = window.WebGL2Bootstrap;
+      var math = window.WebGL2Math;
+      var canvas = document.getElementById('glcanvas');
+
+      function drawObject(gl, uniforms, mesh, model, view, projection, albedo, ambient) {
+        var normalMatrix = math.mat3NormalFromMat4(model);
+        gl.uniformMatrix4fv(uniforms.uModel, false, model);
+        gl.uniformMatrix4fv(uniforms.uView, false, view);
+        gl.uniformMatrix4fv(uniforms.uProjection, false, projection);
+        gl.uniformMatrix3fv(uniforms.uNormalMatrix, false, normalMatrix);
+        gl.uniform3fv(uniforms.uAlbedo, albedo);
+        gl.uniform3fv(uniforms.uAmbientColor, ambient);
+        gl.bindVertexArray(mesh.vao);
+        gl.drawElements(gl.TRIANGLES, mesh.indexCount, mesh.indexType, 0);
+      }
+
+      function draw(gl, program, plane, sphere, cube, uniforms, timeSeconds) {
+        boot.resizeCanvasToDisplaySize(canvas, gl);
+        boot.clearColorAndDepth(gl);
+        gl.useProgram(program);
+
+        var aspect = canvas.width / canvas.height;
+        var projection = math.mat4Perspective(Math.PI / 4, aspect, 0.25, 60.0);
+        var eye = math.orbitEye(timeSeconds, 5.0, 2.2, [0, 0.4, 0]);
+        var view = math.mat4LookAt(eye, [0, 0.4, 0], [0, 1, 0]);
+
+        gl.uniform3f(uniforms.uDirLightDir, -0.35, -1.0, -0.25);
+        gl.uniform3f(uniforms.uDirLightColor, 1.0, 0.96, 0.88);
+        gl.uniform3f(uniforms.uFillLightDir, 0.6, -0.2, 0.5);
+        gl.uniform3f(uniforms.uFillLightColor, 0.35, 0.45, 0.75);
+        gl.uniform3fv(uniforms.uViewPos, eye);
+
+        var groundModel = math.mat4Identity();
+        drawObject(gl, uniforms, plane, groundModel, view, projection,
+          [0.22, 0.24, 0.28], [0.35, 0.35, 0.38]);
+
+        var sphereModel = math.mat4Multiply(
+          math.mat4Translate(0, 0.55, 0),
+          math.mat4Multiply(
+            math.mat4RotateY(timeSeconds * 0.4),
+            math.mat4Scale(0.55, 0.55, 0.55)
+          )
+        );
+        drawObject(gl, uniforms, sphere, sphereModel, view, projection,
+          [0.45, 0.62, 0.95], [0.1, 0.1, 0.12]);
+
+        var cubeModel = math.mat4Multiply(
+          math.mat4Translate(1.4, 0.5, 0.6),
+          math.mat4Multiply(
+            math.mat4RotateY(timeSeconds * 0.7 + 0.5),
+            math.mat4RotateX(0.25)
+          )
+        );
+        drawObject(gl, uniforms, cube, cubeModel, view, projection,
+          [0.92, 0.55, 0.32], [0.1, 0.1, 0.12]);
+      }
+
+      function start() {
+        var gl = boot.initWebGL2(canvas);
+        boot.enableDepthTest(gl);
+        var plane = math.createPlaneMesh(gl, 8, 8);
+        var sphere = math.createSphereMesh(gl, 28);
+        var cube = math.createCubeMesh(gl);
+
+        return boot.createProgramFromUrls(gl, 'vertex.glsl', 'fragment.glsl').then(function (program) {
+          var uniforms = {
+            uModel: gl.getUniformLocation(program, 'uModel'),
+            uView: gl.getUniformLocation(program, 'uView'),
+            uProjection: gl.getUniformLocation(program, 'uProjection'),
+            uNormalMatrix: gl.getUniformLocation(program, 'uNormalMatrix'),
+            uAlbedo: gl.getUniformLocation(program, 'uAlbedo'),
+            uAmbientColor: gl.getUniformLocation(program, 'uAmbientColor'),
+            uDirLightDir: gl.getUniformLocation(program, 'uDirLightDir'),
+            uDirLightColor: gl.getUniformLocation(program, 'uDirLightColor'),
+            uFillLightDir: gl.getUniformLocation(program, 'uFillLightDir'),
+            uFillLightColor: gl.getUniformLocation(program, 'uFillLightColor'),
+            uViewPos: gl.getUniformLocation(program, 'uViewPos')
+          };
+          boot.startRenderLoop(function (timeMs) {
+            draw(gl, program, plane, sphere, cube, uniforms, timeMs * 0.001);
+          });
+        });
+      }
+
+      start().catch(function (err) {
+        boot.showError(
+          (err && err.message ? err.message : String(err)) +
+          '\n\n提示：请通过本地静态服务器打开本页（file:// 下 fetch .glsl 通常会失败）。\n' +
+          '例如在仓库根目录运行：npx serve 或 python3 -m http.server'
+        );
+      });
+    })();
+  </script>
+</body>
+</html>
