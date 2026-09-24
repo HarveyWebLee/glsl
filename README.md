@@ -8,7 +8,7 @@ Harvey 从零学习 GLSL 的笔记与示例代码仓库。每节课的文档、�
 2. 按课次阅读 `docs/` 下的正文，再打开 `lessons/` 里对应的着色器文件。
 3. 每课末尾有自测题；先自己作答，再对照 `ANSWERS.md`。
 4. 着色器示例统一使用 **GLSL ES 3.00**（`#version 300 es`），面向 WebGL2，暂不依赖 Three.js。
-5. 第 01–10 课提供原生 WebGL2 演示页（`lessons/*/index.html`），可直接在浏览器中查看着色器效果。
+5. 第 01–15 课提供原生 WebGL2 演示页（`lessons/*/index.html`），可直接在浏览器中查看着色器效果。
 
 ## 如何运行演示
 
@@ -34,8 +34,13 @@ python3 -m http.server 8080
 | 第 08 课 | http://localhost:8080/lessons/08-basic-lighting/ |
 | 第 09 课 | http://localhost:8080/lessons/09-advanced-sdf/ |
 | 第 10 课 | http://localhost:8080/lessons/10-procedural-scene/ |
+| 第 11 课 | http://localhost:8080/lessons/11-mvp-and-clip-space/ |
+| 第 12 课 | http://localhost:8080/lessons/12-perspective-and-frustum/ |
+| 第 13 课 | http://localhost:8080/lessons/13-camera-and-depth/ |
+| 第 14 课 | http://localhost:8080/lessons/14-mesh-lighting/ |
+| 第 15 课 | http://localhost:8080/lessons/15-3d-scene-capstone/ |
 
-无需安装依赖、无需打包工具；演示使用原生 WebGL2（`canvas.getContext('webgl2')`）。
+无需安装依赖、无需打包工具；演示使用原生 WebGL2（`canvas.getContext('webgl2')`）。第 11–15 课额外引用 [`lessons/_shared/webgl2-math.js`](lessons/_shared/webgl2-math.js) 提供 `mat4` 与程序化网格。
 
 ## 目录说明
 
@@ -44,11 +49,12 @@ README.md                          # 本文件：仓库用途与进度
 docs/
   00-roadmap.md                    # 学习路线
   01-pipeline-and-skeleton.md      # 第 01 课正文
-  …                                # 02–10 课正文
+  …                                # 02–15 课正文
 lessons/
   _shared/
     webgl2-bootstrap.js            # 各课 demo 共用的极简 WebGL2 工具
-  01-hello-shaders/ … 10-procedural-scene/
+    webgl2-math.js                 # 第 11–15 课：mat4、网格生成
+  01-hello-shaders/ … 15-3d-scene-capstone/
     README.md                      # 本课文件说明与运行提示
     index.html                     # WebGL2 演示页
     vertex.glsl / fragment.glsl    # 着色器
@@ -77,7 +83,17 @@ lessons/
 | 09 | 进阶 SDF | ✅ |
 | 10 | 综合小实验 | ✅ |
 
-**本路线主体已完结（01–10）。** 纯色与渐变已在 02–03 课覆盖。FBO、PBR 等为可选进阶，见 [`docs/00-roadmap.md`](docs/00-roadmap.md)。
+### 阶段三：真实 3D 图形 ✅
+
+| 课次 | 主题 | 状态 |
+|------|------|------|
+| 11 | 三维坐标与 MVP | ✅ |
+| 12 | 透视投影与视锥体 | ✅ |
+| 13 | 相机与深度 | ✅ |
+| 14 | 三维网格光照 | ✅ |
+| 15 | 综合场景收官 | ✅ |
+
+**本路线主体已完结（01–15）。** FBO、阴影贴图、PBR、GPGPU 等为可选进阶，见 [`docs/00-roadmap.md`](docs/00-roadmap.md)。
 
 ## 约定
 
@@ -85,3 +101,4 @@ lessons/
 - **着色器方言**：GLSL ES 3.00，首行写 `#version 300 es`。
 - **精度**：片元着色器中声明 `precision`（ES 要求）。
 - **颜色输出**：使用自定义 `out vec4`（如 `fragColor`），不使用已废弃的 `gl_FragColor`。
+- **命名**：属性 `a*`、uniform `u*`、varying `v*`。

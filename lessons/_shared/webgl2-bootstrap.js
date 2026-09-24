@@ -236,6 +236,23 @@
     };
   }
 
+  /**
+   * 启用深度测试（第 11–15 课 3D 演示用，不影响既有 2D 全屏 demo）
+   * @param {WebGL2RenderingContext} gl
+   */
+  function enableDepthTest(gl) {
+    gl.enable(gl.DEPTH_TEST);
+    gl.depthFunc(gl.LEQUAL);
+  }
+
+  /**
+   * 清除颜色与深度缓冲
+   * @param {WebGL2RenderingContext} gl
+   */
+  function clearColorAndDepth(gl) {
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  }
+
   global.WebGL2Bootstrap = {
     showError: showError,
     createProgramFromUrls: createProgramFromUrls,
@@ -245,6 +262,8 @@
     createUnitQuadWithUv: createUnitQuadWithUv,
     mat3FromTRS: mat3FromTRS,
     initWebGL2: initWebGL2,
+    enableDepthTest: enableDepthTest,
+    clearColorAndDepth: clearColorAndDepth,
     startRenderLoop: startRenderLoop
   };
 })(window);

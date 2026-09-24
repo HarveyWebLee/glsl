@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>第 12 课：透视投影与视锥体</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #141418; }
+    #glcanvas { display: block; width: 100vw; height: 100vh; }
+    #overlay {
+      position: fixed; top: 12px; left: 12px; padding: 8px 12px;
+      font: 14px/1.4 system-ui, sans-serif; color: #e8e8ec;
+      background: rgba(0, 0, 0, 0.45); border-radius: 6px; pointer-events: none;
+    }
+    #controls {
+      position: fixed; top: 12px; right: 12px; padding: 10px 14px;
+      font: 13px/1.5 system-ui, sans-serif; color: #e8e8ec;
+      background: rgba(0, 0, 0, 0.55); border-radius: 8px; min-width: 220px;
+    }
+    #controls label { display: block; margin-top: 8px; }
+    #controls input[type="range"] { width: 100%; }
+    #controls span { float: right; font-variant-numeric: tabular-nums; }
+    #error {
+      position: fixed; inset: 0; margin: 0; padding: 24px; overflow: auto;
+      font: 14px/1.5 ui-monospace, monospace; color: #ffb4b4;
+      background: rgba(20, 0, 0, 0.92); white-space: pre-wrap; z-index: 10;
+    }
+    #error[hidden] { display: none; }
+  </style>
+</head>
+<body>
+  <canvas id="glcanvas" aria-label="WebGL2 画布"></canvas>
+  <div id="overlay">第 12 课 · 透视投影 · 视锥线框 + FOV/near/far 滑块</div>
+  <div id="controls">
+    <strong>视锥参数</strong>
+    <label>FOV (°) <span id="fovVal">45</span>
+      <input id="fov" type="range" min="20" max="100" step="1" value="45">
+    </label>
+    <label>near <span id="nearVal">0.3</span>
+      <input id="near" type="range" min="0.1" max="2" step="0.05" value="0.3">
+    </label>
+    <label>far <span id="farVal">12</span>
+      <input id="far" type="range" min="3" max="30" step="0.5" value="12">
+    </label>
+  </div>
+  <pre id="error" hidden></pre>
+
+  <script src="../_shared/webgl2-bootstrap.js"></script>
+  <script src="../_shared/webgl2-math.js"></script>
+  <script>
+    (function () {
+      var boot = window.WebGL2Bootstrap;
+      var math = window.WebGL2Math;
+      var canvas = document.getElementById('glcanvas');
+
+      var params = { fovDeg: 45, near: 0.3, far: 12 };
+
+      function readControls() {
+        params.fovDeg = parseFloat(document.getElementById('fov').value);
+        params.near = parseFloat(document.getElementById('near').value);
+        params.far = Math.max(params.near + 0.5, parseFloat(document.getElementById('far').value));
+        document.getElementById('fovVal').textContent = params.fovDeg.toFixed(0);
+        document.getElementById('nearVal').textContent = params.near.toFixed(2);
+        document.getElementById('farVal').textContent = params.far.toFixed(1);
+      }
+
+      ['fov', 'near', 'far'].forEach(function (id) {
+        document.getElementById(id).addEventListener('input', readControls);
+      });
+
+      function draw(gl, meshProgram, lineProgram, cube, frustum, uniforms, timeSeconds) {
+        boot.resizeCanvasToDisplaySize(canvas, gl);
+        boot.clearColorAndDepth(gl);
+
+        var aspect = canvas.width / canvas.height;
+        var fovy = params.fovDeg * Math.PI / 180;
+        var pulse = 1.0 + Math.sin(timeSeconds * 2.0) * 0.04;
+        var projection = math.mat4Perspective(fovy * pulse, aspect, params.near, params.far);
+
+        var eye = [2.5, 1.8, 3.5];
+        var view = math.mat4LookAt(eye, [0, 0, 0], [0, 1, 0]);
+        var model = math.mat4RotateY(timeSeconds * 0.5);
+        var identity = math.mat4Identity();
+
+        math.updateFrustumLineMesh(gl, frustum, fovy * pulse, aspect, params.near, params.far);
+
+        gl.useProgram(lineProgram);
+        gl.uniformMatrix4fv(uniforms.line.uProjection, false, projection);
+        gl.uniformMatrix4fv(uniforms.line.uView, false, view);
+        gl.uniformMatrix4fv(uniforms.line.uModel, false, identity);
+        gl.uniform3f(uniforms.line.uColor, 0.35, 0.85, 1.0);
+        gl.bindVertexArray(frustum.vao);
+        gl.drawArrays(frustum.mode, 0, frustum.vertexCount);
+
+        gl.useProgram(meshProgram);
+        gl.uniformMatrix4fv(uniforms.mesh.uProjection, false, projection);
+        gl.uniformMatrix4fv(uniforms.mesh.uView, false, view);
+        gl.uniformMatrix4fv(uniforms.mesh.uModel, false, model);
+        gl.bindVertexArray(cube.vao);
+        gl.drawElements(gl.TRIANGLES, cube.indexCount, cube.indexType, 0);
+      }
+
+      function start() {
+        var gl = boot.initWebGL2(canvas);
+        boot.enableDepthTest(gl);
+        readControls();
+
+        var cube = math.createCubeMesh(gl);
+        var frustum = math.createFrustumLineMesh(gl, Math.PI / 4, 1, 0.3, 12);
+
+        return Promise.all([
+          boot.createProgramFromUrls(gl, 'vertex.glsl', 'fragment.glsl'),
+          boot.createProgramFromUrls(gl, 'line-vertex.glsl', 'line-fragment.glsl')
+        ]).then(function (programs) {
+          var meshProgram = programs[0];
+          var lineProgram = programs[1];
+          var uniforms = {
+            mesh: {
+              uModel: gl.getUniformLocation(meshProgram, 'uModel'),
+              uView: gl.getUniformLocation(meshProgram, 'uView'),
+              uProjection: gl.getUniformLocation(meshProgram, 'uProjection')
+            },
+            line: {
+              uModel: gl.getUniformLocation(lineProgram, 'uModel'),
+              uView: gl.getUniformLocation(lineProgram, 'uView'),
+              uProjection: gl.getUniformLocation(lineProgram, 'uProjection'),
+              uColor: gl.getUniformLocation(lineProgram, 'uColor')
+            }
+          };
+          boot.startRenderLoop(function (timeMs) {
+            draw(gl, meshProgram, lineProgram, cube, frustum, uniforms, timeMs * 0.001);
+          });
+        });
+      }
+
+      start().catch(function (err) {
+        boot.showError(
+          (err && err.message ? err.message : String(err)) +
+          '\n\n提示：请通过本地静态服务器打开本页（file:// 下 fetch .glsl 通常会失败）。\n' +
+          '例如在仓库根目录运行：npx serve 或 python3 -m http.server'
+        );
+      });
+    })();
+  </script>
+</body>
+</html>
