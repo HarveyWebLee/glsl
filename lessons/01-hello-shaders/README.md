@@ -6,17 +6,26 @@
 
 | 文件 | 说明 |
 |------|------|
+| `index.html` | WebGL2 演示页：加载本目录 `vertex.glsl` / `fragment.glsl` 并绘制全屏四边形 |
 | `vertex.glsl` | 顶点着色器：读 `aPosition`，写 `gl_Position` 与 `vColor` |
 | `fragment.glsl` | 片元着色器：读插值后的 `vColor`，写 `fragColor` |
 | `ANSWERS.md` | 自测题参考答案 |
 
-## 如何「运行」
+## 如何运行
 
-本 PR **不包含** WebGL 应用或 `package.json`。你可以：
+1. 在仓库根目录启动静态服务器（`file://` 无法 `fetch` 本地 `.glsl`）：
 
-1. **阅读对照**：与文档中的代码块逐行比对。
-2. **后续整合**：等仓库加入 WebGL2 示例后，将这两个文件编译、链接并绘制全屏三角形或四边形。
-3. **外部工具**：把源码粘贴到 [ShaderToy](https://www.shadertoy.com/) 等工具时需注意语法差异；本课文件是按 WebGL2 顶点/片元分离写法设计的，不是单文件 ShaderToy 片段。
+   ```bash
+   npx serve
+   # 或
+   python3 -m http.server 8080
+   ```
+
+2. 浏览器打开：`http://localhost:8080/lessons/01-hello-shaders/`（端口以实际为准）。
+
+3. 应看到由顶点颜色插值形成的四角渐变。若着色器编译/链接失败，页面会显示错误日志。
+
+也可阅读对照文档 [`docs/01-pipeline-and-skeleton.md`](../../docs/01-pipeline-and-skeleton.md) 中的代码块逐行比对。
 
 ## 顶点数据提示（供日后 WebGL 使用）
 

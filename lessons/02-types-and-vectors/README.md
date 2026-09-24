@@ -6,6 +6,7 @@
 
 | 文件 | 说明 |
 |------|------|
+| `index.html` | WebGL2 演示页：加载本目录 `vertex.glsl` / `fragment.glsl` 并绘制全屏四边形 |
 | `vertex.glsl` | 顶点着色器：读 `aPosition`，写 `gl_Position` 与插值用 `vUv` |
 | `fragment.glsl` | 片元着色器：用 `normalize`、`dot`、`smoothstep`、`mix` 做双色渐变 |
 | `ANSWERS.md` | 自测题参考答案 |
@@ -16,13 +17,21 @@
 2. 片元阶段以 `(0.5, 0.5)` 为中心，计算单位方向 `dir`，再与对角线方向做点积得到混合因子 `t`。
 3. 经 `smoothstep` 柔化后，用 `mix` 在蓝橙两色之间插值，输出 `fragColor`。
 
-## 如何「运行」
+## 如何运行
 
-本仓库 **不包含** WebGL 应用或 `package.json`。你可以：
+1. 在仓库根目录启动静态服务器：
 
-1. **阅读对照**：与文档中的代码块及正文术语（swizzle、内置函数）逐行比对。
-2. **后续整合**：等仓库加入 WebGL2 示例后，编译、链接本对着器并绘制全屏四边形即可看到渐变。
-3. **外部工具**：本课文件按 WebGL2 顶点/片元分离写法设计，不宜直接粘贴到单文件 ShaderToy 片段。
+   ```bash
+   npx serve
+   # 或
+   python3 -m http.server 8080
+   ```
+
+2. 浏览器打开：`http://localhost:8080/lessons/02-types-and-vectors/`（端口以实际为准）。
+
+3. 应看到以屏幕中心为基准的蓝橙对角渐变（`normalize` / `dot` / `smoothstep` / `mix`）。编译或链接失败时页面会显示错误信息。
+
+也可阅读对照文档 [`docs/02-types-and-vectors.md`](../../docs/02-types-and-vectors.md) 中的代码块与术语说明。
 
 ## 顶点数据提示（供日后 WebGL 使用）
 
