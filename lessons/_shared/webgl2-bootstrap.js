@@ -115,6 +115,44 @@
   }
 
   /**
+   * 创建带 UV 属性的全屏四边形（两个三角形，6 顶点）
+   * aPosition 在 location = 0（vec3），aUv 在 location = 1（vec2）
+   * UV 范围 (0,0)–(1,1)，与 OpenGL 纹理坐标系一致（左下为原点）
+   */
+  function createFullscreenQuadWithUv(gl) {
+    // 交错布局：x, y, z, u, v
+    var interleaved = new Float32Array([
+      -1, -1, 0, 0, 0,
+       1, -1, 0, 1, 0,
+      -1,  1, 0, 0, 1,
+       1, -1, 0, 1, 0,
+       1,  1, 0, 1, 1,
+      -1,  1, 0, 0, 1
+    ]);
+
+    var stride = 5 * 4; // 5 个 float，每个 4 字节
+
+    var vao = gl.createVertexArray();
+    gl.bindVertexArray(vao);
+
+    var buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, interleaved, gl.STATIC_DRAW);
+
+    // layout(location = 0) in vec3 aPosition
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, stride, 0);
+
+    // layout(location = 1) in vec2 aUv
+    gl.enableVertexAttribArray(1);
+    gl.vertexAttribPointer(1, 2, gl.FLOAT, false, stride, 3 * 4);
+
+    gl.bindVertexArray(null);
+
+    return { vao: vao, buffer: buffer };
+  }
+
+  /**
    * 初始化 WebGL2 上下文与基础 GL 状态
    * @param {HTMLCanvasElement} canvas
    */
@@ -152,6 +190,7 @@
     createProgramFromUrls: createProgramFromUrls,
     resizeCanvasToDisplaySize: resizeCanvasToDisplaySize,
     createFullscreenQuad: createFullscreenQuad,
+    createFullscreenQuadWithUv: createFullscreenQuadWithUv,
     initWebGL2: initWebGL2,
     startRenderLoop: startRenderLoop
   };
