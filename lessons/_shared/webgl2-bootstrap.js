@@ -153,6 +153,57 @@
   }
 
   /**
+   * 创建以原点为中心的单位四边形（边长约 1，范围约 [-0.5, 0.5]）
+   * aPosition 在 location = 0（vec3），aUv 在 location = 1（vec2）
+   */
+  function createUnitQuadWithUv(gl) {
+    var interleaved = new Float32Array([
+      -0.5, -0.5, 0, 0, 0,
+       0.5, -0.5, 0, 1, 0,
+      -0.5,  0.5, 0, 0, 1,
+       0.5, -0.5, 0, 1, 0,
+       0.5,  0.5, 0, 1, 1,
+      -0.5,  0.5, 0, 0, 1
+    ]);
+
+    var stride = 5 * 4;
+    var vao = gl.createVertexArray();
+    gl.bindVertexArray(vao);
+
+    var buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, interleaved, gl.STATIC_DRAW);
+
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, stride, 0);
+    gl.enableVertexAttribArray(1);
+    gl.vertexAttribPointer(1, 2, gl.FLOAT, false, stride, 3 * 4);
+
+    gl.bindVertexArray(null);
+    return { vao: vao, buffer: buffer };
+  }
+
+  /**
+   * 构造 2D 仿射变换 mat3（列主序，供 gl.uniformMatrix3fv 使用）
+   * 对应 GLSL：vec3 world = uModel * vec3(aPosition.xy, 1.0);
+   * @param {number} tx 平移 x
+   * @param {number} ty 平移 y
+   * @param {number} rotationRad 旋转角（弧度）
+   * @param {number} scaleX 缩放 x
+   * @param {number} scaleY 缩放 y
+   * @returns {Float32Array}
+   */
+  function mat3FromTRS(tx, ty, rotationRad, scaleX, scaleY) {
+    var c = Math.cos(rotationRad);
+    var s = Math.sin(rotationRad);
+    return new Float32Array([
+      scaleX * c, scaleX * s, 0,
+      -scaleY * s, scaleY * c, 0,
+      tx, ty, 1
+    ]);
+  }
+
+  /**
    * 初始化 WebGL2 上下文与基础 GL 状态
    * @param {HTMLCanvasElement} canvas
    */
@@ -191,6 +242,8 @@
     resizeCanvasToDisplaySize: resizeCanvasToDisplaySize,
     createFullscreenQuad: createFullscreenQuad,
     createFullscreenQuadWithUv: createFullscreenQuadWithUv,
+    createUnitQuadWithUv: createUnitQuadWithUv,
+    mat3FromTRS: mat3FromTRS,
     initWebGL2: initWebGL2,
     startRenderLoop: startRenderLoop
   };
