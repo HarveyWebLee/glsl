@@ -16,8 +16,14 @@ README.md                          # 本文件：仓库用途与进度
 docs/
   00-roadmap.md                    # 学习路线（简短）
   01-pipeline-and-skeleton.md      # 第 01 课正文
+  02-types-and-vectors.md          # 第 02 课正文
 lessons/
   01-hello-shaders/
+    README.md                      # 本课文件说明与运行提示
+    vertex.glsl                    # 顶点着色器
+    fragment.glsl                  # 片元着色器
+    ANSWERS.md                     # 自测题答案
+  02-types-and-vectors/
     README.md                      # 本课文件说明与运行提示
     vertex.glsl                    # 顶点着色器
     fragment.glsl                  # 片元着色器
@@ -31,7 +37,8 @@ lessons/
 | 课次 | 主题 | 状态 |
 |------|------|------|
 | 01 | 管线概览与最小着色器骨架 | ✅ 已完成 |
-| 02+ | 待定 | 未开始 |
+| 02 | 类型与向量运算 | ✅ 已完成 |
+| 03+ | 待定 | 未开始 |
 
 ## 约定
 
