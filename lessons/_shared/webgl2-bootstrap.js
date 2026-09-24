@@ -127,11 +127,32 @@
     return gl;
   }
 
+  /**
+   * 用 requestAnimationFrame 持续调用 renderFn
+   * @param {(timeMs: number) => void} renderFn 参数为 performance.now() 毫秒时间戳
+   * @returns {() => void} 调用返回的函数可停止循环
+   */
+  function startRenderLoop(renderFn) {
+    var rafId = 0;
+
+    function frame(timeMs) {
+      renderFn(timeMs);
+      rafId = requestAnimationFrame(frame);
+    }
+
+    rafId = requestAnimationFrame(frame);
+
+    return function stopRenderLoop() {
+      cancelAnimationFrame(rafId);
+    };
+  }
+
   global.WebGL2Bootstrap = {
     showError: showError,
     createProgramFromUrls: createProgramFromUrls,
     resizeCanvasToDisplaySize: resizeCanvasToDisplaySize,
     createFullscreenQuad: createFullscreenQuad,
-    initWebGL2: initWebGL2
+    initWebGL2: initWebGL2,
+    startRenderLoop: startRenderLoop
   };
 })(window);

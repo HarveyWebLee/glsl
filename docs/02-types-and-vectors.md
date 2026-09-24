@@ -248,4 +248,4 @@ void main() {
 
 ## 下一课预告
 
-uniform 与属性：`layout(location=…)`、从 CPU 传入时间与分辨率等参数。
+uniform 与属性：`layout(location=…)`、从 CPU 用 `gl.uniform*` 传入时间与颜色等参数。详见 [`docs/03-uniforms-and-attributes.md`](03-uniforms-and-attributes.md)。
