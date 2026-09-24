@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>第 10 课：综合小实验</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #141418; }
+    #glcanvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+    #overlay {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      padding: 8px 12px;
+      font: 14px/1.4 system-ui, sans-serif;
+      color: #e8e8ec;
+      background: rgba(0, 0, 0, 0.45);
+      border-radius: 6px;
+      pointer-events: none;
+    }
+    #error {
+      position: fixed;
+      inset: 0;
+      margin: 0;
+      padding: 24px;
+      overflow: auto;
+      font: 14px/1.5 ui-monospace, monospace;
+      color: #ffb4b4;
+      background: rgba(20, 0, 0, 0.92);
+      white-space: pre-wrap;
+      z-index: 10;
+    }
+    #error[hidden] { display: none; }
+  </style>
+</head>
+<body>
+  <canvas id="glcanvas" aria-label="WebGL2 画布"></canvas>
+  <div id="overlay">第 10 课 · 综合小实验 · SDF + 噪声域扭曲 + 简易光照 · 阶段二收官</div>
+  <pre id="error" hidden></pre>
+
+  <script src="../_shared/webgl2-bootstrap.js"></script>
+  <script>
+    (function () {
+      var boot = window.WebGL2Bootstrap;
+      var canvas = document.getElementById('glcanvas');
+
+      function draw(gl, program, quad, uniforms, timeSeconds) {
+        boot.resizeCanvasToDisplaySize(canvas, gl);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.useProgram(program);
+        gl.uniform1f(uniforms.uTime, timeSeconds);
+        gl.uniform2f(uniforms.uResolution, canvas.width, canvas.height);
+        gl.bindVertexArray(quad.vao);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+      }
+
+      function start() {
+        var gl = boot.initWebGL2(canvas);
+        var quad = boot.createFullscreenQuadWithUv(gl);
+
+        return boot
+          .createProgramFromUrls(gl, 'vertex.glsl', 'fragment.glsl')
+          .then(function (program) {
+            var uniforms = {
+              uTime: gl.getUniformLocation(program, 'uTime'),
+              uResolution: gl.getUniformLocation(program, 'uResolution')
+            };
+
+            boot.startRenderLoop(function (timeMs) {
+              draw(gl, program, quad, uniforms, timeMs * 0.001);
+            });
+          });
+      }
+
+      start().catch(function (err) {
+        boot.showError(
+          (err && err.message ? err.message : String(err)) +
+          '\n\n提示：请通过本地静态服务器打开本页（file:// 下 fetch .glsl 通常会失败）。\n' +
+          '例如在仓库根目录运行：npx serve 或 python3 -m http.server'
+        );
+      });
+    })();
+  </script>
+</body>
+</html>
