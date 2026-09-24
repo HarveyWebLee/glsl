@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>第 04 课：纹理采样</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #141418; }
+    #glcanvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+    #overlay {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      padding: 8px 12px;
+      font: 14px/1.4 system-ui, sans-serif;
+      color: #e8e8ec;
+      background: rgba(0, 0, 0, 0.45);
+      border-radius: 6px;
+      pointer-events: none;
+    }
+    #error {
+      position: fixed;
+      inset: 0;
+      margin: 0;
+      padding: 24px;
+      overflow: auto;
+      font: 14px/1.5 ui-monospace, monospace;
+      color: #ffb4b4;
+      background: rgba(20, 0, 0, 0.92);
+      white-space: pre-wrap;
+      z-index: 10;
+    }
+    #error[hidden] { display: none; }
+  </style>
+</head>
+<body>
+  <canvas id="glcanvas" aria-label="WebGL2 画布"></canvas>
+  <div id="overlay">第 04 课 · 纹理采样 · sampler2D / texture() · aUv · REPEAT 平铺</div>
+  <pre id="error" hidden></pre>
+
+  <script src="../_shared/webgl2-bootstrap.js"></script>
+  <script>
+    (function () {
+      var boot = window.WebGL2Bootstrap;
+      var canvas = document.getElementById('glcanvas');
+
+      /** 用离屏 Canvas 生成彩色棋盘格，避免依赖外部图片文件 */
+      function createCheckerboardCanvas(size, cells) {
+        var canvas2d = document.createElement('canvas');
+        canvas2d.width = size;
+        canvas2d.height = size;
+        var ctx = canvas2d.getContext('2d');
+        var cell = size / cells;
+        var colors = [
+          '#e85d4c', '#f0a030', '#4cb8e8', '#5cd675',
+          '#c878e8', '#f0e050', '#50c8c0', '#f080a0'
+        ];
+
+        for (var row = 0; row < cells; row++) {
+          for (var col = 0; col < cells; col++) {
+            var idx = (row + col) % colors.length;
+            ctx.fillStyle = colors[idx];
+            // Canvas 2D 原点在左上；此处按行从上到下绘制，配合显式 UV（左下为 0,0）显示正确
+            ctx.fillRect(col * cell, row * cell, cell, cell);
+          }
+        }
+
+        return canvas2d;
+      }
+
+      /** 创建 2D 纹理并上传棋盘格像素 */
+      function createCheckerboardTexture(gl) {
+        var source = createCheckerboardCanvas(256, 8);
+        var texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.bindTexture(gl.TEXTURE_2D, null);
+        return texture;
+      }
+
+      function draw(gl, program, quad, uniforms, texture, timeSeconds) {
+        boot.resizeCanvasToDisplaySize(canvas, gl);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.useProgram(program);
+
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.uniform1i(uniforms.uTexture, 0);
+        gl.uniform1f(uniforms.uTime, timeSeconds);
+
+        gl.bindVertexArray(quad.vao);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+      }
+
+      function start() {
+        var gl = boot.initWebGL2(canvas);
+        var quad = boot.createFullscreenQuadWithUv(gl);
+        var texture = createCheckerboardTexture(gl);
+
+        return boot
+          .createProgramFromUrls(gl, 'vertex.glsl', 'fragment.glsl')
+          .then(function (program) {
+            var uniforms = {
+              uTexture: gl.getUniformLocation(program, 'uTexture'),
+              uTime: gl.getUniformLocation(program, 'uTime')
+            };
+
+            boot.startRenderLoop(function (timeMs) {
+              draw(gl, program, quad, uniforms, texture, timeMs * 0.001);
+            });
+          });
+      }
+
+      start().catch(function (err) {
+        boot.showError(
+          (err && err.message ? err.message : String(err)) +
+          '\n\n提示：请通过本地静态服务器打开本页（file:// 下 fetch .glsl 通常会失败）。\n' +
+          '例如在仓库根目录运行：npx serve 或 python3 -m http.server'
+        );
+      });
+    })();
+  </script>
+</body>
+</html>
